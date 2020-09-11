@@ -1,7 +1,11 @@
 ﻿@page "/todo_list"
+@using BlazorBoilerplate.Shared.Dto.Sample
 @*@attribute [Authorize] Uncomment to Secure this page*@
 @inject HttpClient Http
 @inject IMatToaster matToaster
+
+@using System.Net
+@using Newtonsoft.Json;
 
 <h1>Todo List - CRUD</h1>
 <p>
@@ -77,9 +81,9 @@
 
     async Task ReadTodos()
     {
-        ApiResponseDto apiResponse = await Http.GetJsonAsync<ApiResponseDto>("api/todo");
+        ApiResponseDto apiResponse = await Http.GetFromJsonAsync<ApiResponseDto>("api/todo");
 
-        if (apiResponse.StatusCode == 200)
+        if (apiResponse.StatusCode == Status200OK)
         {
             matToaster.Add(apiResponse.Message, MatToastType.Success, "Todo List Retrieved");
             todos = Newtonsoft.Json.JsonConvert.DeserializeObject<TodoDto[]>(apiResponse.Result.ToString()).ToList<TodoDto>();
@@ -95,9 +99,9 @@
         //this updates the IsCompleted flag only
         try
         {
-
             todo.IsCompleted = !todo.IsCompleted;
-            ApiResponseDto apiResponse = await Http.PutJsonAsync<ApiResponseDto>("api/todo", todo);
+            HttpResponseMessage response = await Http.PutAsJsonAsync("api/todo", todo);
+            ApiResponseDto apiResponse = JsonConvert.DeserializeObject<ApiResponseDto>(await response.Content.ReadAsStringAsync());
 
             if (!apiResponse.IsError)
             {
@@ -121,7 +125,7 @@
         try
         {
             var response = await Http.DeleteAsync("api/todo/" + todo.Id);
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode ==  (HttpStatusCode)Status200OK)
             {
                 matToaster.Add("Todo Deleted", MatToastType.Success);
                 todos.Remove(todo);
@@ -146,7 +150,7 @@
 
     public void OpenDeleteDialog(long todoId)
     {
-        todo = todos.Where(x => x.Id == todoId).FirstOrDefault();
+        todo = todos.Where(x => x.Id == todoId).SingleOrDefault();
         this.deleteDialogOpen = true;
     }
 
@@ -155,8 +159,10 @@
         dialogIsOpen = false;
         try
         {
-            ApiResponseDto apiResponse = await Http.PostJsonAsync<ApiResponseDto>("api/todo", todo);
-            if (apiResponse.StatusCode == 200)
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/todo", todo);
+            ApiResponseDto apiResponse = JsonConvert.DeserializeObject<ApiResponseDto>(await response.Content.ReadAsStringAsync());
+
+            if (apiResponse.StatusCode == Status200OK)
             {
                 matToaster.Add(apiResponse.Message, MatToastType.Success);
                 todo = Newtonsoft.Json.JsonConvert.DeserializeObject<TodoDto>(apiResponse.Result.ToString());

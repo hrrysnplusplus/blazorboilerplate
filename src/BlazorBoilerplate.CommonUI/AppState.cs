@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using static Microsoft.AspNetCore.Http.StatusCodes;
+
 using BlazorBoilerplate.CommonUI.Services.Contracts;
 using BlazorBoilerplate.Shared.Dto;
-
+using BlazorBoilerplate.Shared.Dto.Account;
 using Newtonsoft.Json;
 
 namespace BlazorBoilerplate.CommonUI
@@ -51,7 +53,7 @@ namespace BlazorBoilerplate.CommonUI
 
             ApiResponseDto apiResponse = await _userProfileApi.Get();
 
-            if (apiResponse.StatusCode == 200)
+            if (apiResponse.StatusCode == Status200OK)
             {
                 return JsonConvert.DeserializeObject<UserProfileDto>(apiResponse.Result.ToString());
             }
@@ -78,11 +80,11 @@ namespace BlazorBoilerplate.CommonUI
 
         public async Task SaveLastVisitedUri(string uri)
         {
-            if (UserProfile ==  null)
+            if (UserProfile == null)
             {
                 UserProfile = await GetUserProfile();
             }
-            if (UserProfile != null)
+            else
             {
                 UserProfile.LastPageVisited = uri;
                 await UpdateUserProfile();
